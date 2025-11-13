@@ -8,13 +8,15 @@ import random
 import numpy as np
 import sklearn.metrics as metrics
 import argparse
-import logging
-
+import logging 
 from .dataset import DittoDataset
 from torch.utils import data
-from transformers import AutoModel, AdamW, get_linear_schedule_with_warmup
+from torch.optim import AdamW
+from transformers import AutoModel, get_linear_schedule_with_warmup
 from tensorboardX import SummaryWriter
 from torch.amp import autocast, GradScaler 
+
+logging.basicConfig(level=logging.INFO)
 
 lm_mp = {'roberta': 'roberta-base',
          'distilbert': 'distilbert-base-uncased'}
@@ -202,8 +204,9 @@ def train(trainset, validset, testset, run_tag, hp):
             scaler = GradScaler() 
         
         else:
-            logging.logger.warning("CUDA is not available, so AMP is not used")
+            logging.warning("AMP has been enabled, butCUDA is not available. Will default to no AMP.")
             scaler = None
+
     num_steps = (len(trainset) // hp.batch_size) * hp.n_epochs
     scheduler = get_linear_schedule_with_warmup(optimizer,
                                                 num_warmup_steps=0,
