@@ -116,7 +116,6 @@ def train_step(train_iter, model, optimizer, scheduler, scaler=None):
         model (DMModel): the model
         optimizer (Optimizer): the optimizer (Adam or AdamW)
         scheduler (LRScheduler): learning rate scheduler
-        hp (Namespace): other hyper-parameters (e.g., amp)
         scaler (GradScaler): the gradient scaler
 
     Returns:
@@ -198,14 +197,14 @@ def train(trainset, validset, testset, run_tag, hp):
                        alpha_aug=hp.alpha_aug)
     model = model.to(device)
     optimizer = AdamW(model.parameters(), lr=hp.lr)
+    
+
+    scaler = None 
 
     if hp.amp:
         if torch.cuda.is_available():
             scaler = GradScaler() 
         
-        else:
-            logging.warning("AMP has been enabled, butCUDA is not available. Will default to no AMP.")
-            scaler = None
 
     num_steps = (len(trainset) // hp.batch_size) * hp.n_epochs
     scheduler = get_linear_schedule_with_warmup(optimizer,
@@ -219,7 +218,7 @@ def train(trainset, validset, testset, run_tag, hp):
     for epoch in range(1, hp.n_epochs+1):
         # train
         model.train()
-        train_step(train_iter, model, optimizer, scheduler, hp, scaler=scaler)
+        train_step(train_iter, model, optimizer, scheduler, scaler=scaler)
 
         # eval
         model.eval()
