@@ -1,3 +1,12 @@
+# NOTE:
+
+In this fork, I will update the Ditto library. Here are some of the things I would like to update: 
+- Work with a newer Python version (3.11+)
+- Newer PyTorch versions allow for mixed precision training, so I would like to explore if I can use that instead of Apex
+- Allow for using some of the newer pre-trained language models that are available out there, like Microsoft's `deberta-v3-base`
+
+I will probably update this README.MD in the future when the codebase matures enough! 
+
 # Ditto: Deep Entity Matching with Pre-Trained Language Models
 
 *Update: a new light-weight version based on new versions of Transformers*
@@ -104,10 +113,3 @@ where ``--task`` is the task name, ``--input_path`` is the input file of the can
 ## Colab notebook
 
 You can also run training and prediction using this colab [notebook](https://colab.research.google.com/drive/1eyQbockBSxxQ_tuW5F1XKyeVOM1HT_Ro?usp=sharing).
-
-## Note
-
-In this fork, I will attempt to update the Ditto library. Here are some of the things I would like to update: 
-- Work with a newer Python version (3.11+)
-- Newer PyTorch versions allow for mixed precision training, so I would like to explore if I can use that instead of Apex
-- Allow for using some of the newer pre-trained language models that are available out there, like Microsoft's `deberta-v3-base`
