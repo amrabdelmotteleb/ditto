@@ -31,6 +31,7 @@ if __name__=="__main__":
     parser.add_argument("--dk", type=str, default=None)
     parser.add_argument("--summarize", dest="summarize", action="store_true")
     parser.add_argument("--size", type=int, default=None)
+    parser.add_argument("--use_gpu", dest="use_gpu", action="store_true")
 
     hp = parser.parse_args()
 
@@ -51,13 +52,14 @@ if __name__=="__main__":
     run_tag = run_tag.replace('/', '_')
 
     # load task configuration
-    configs = json.load(open('configs.json'))
+    configs = json.load(open('configs.json', encoding='utf-8'))
     configs = {conf['name'] : conf for conf in configs}
     config = configs[task]
 
-    trainset = config['trainset']
-    validset = config['validset']
-    testset = config['testset']
+    # Normalize paths for cross-platform compatibility
+    trainset = os.path.normpath(config['trainset'])
+    validset = os.path.normpath(config['validset'])
+    testset = os.path.normpath(config['testset'])
 
     # summarize the sequences up to the max sequence length
     if hp.summarize:

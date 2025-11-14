@@ -66,13 +66,14 @@ class DittoModel(nn.Module):
         return self.fc(enc) # .squeeze() # .sigmoid()
 
 
-def evaluate(model, iterator, threshold=None):
+def evaluate(model, iterator, threshold=None, use_amp=False):
     """Evaluate a model on a validation/test dataset
 
     Args:
         model (DMModel): the EM model
         iterator (Iterator): the valid/test dataset iterator
         threshold (float, optional): the threshold on the 0-class
+        use_amp (bool, optional): whether to use automatic mixed precision
 
     Returns:
         float: the F1 score
@@ -82,10 +83,16 @@ def evaluate(model, iterator, threshold=None):
     all_p = []
     all_y = []
     all_probs = []
+    device_type = 'cuda' if model.device == 'cuda' else 'cpu'
     with torch.no_grad():
         for batch in iterator:
             x, y = batch
-            logits = model(x)
+            # TODO: Look a bit more into using amp with a cpu. 
+            #  Currently, if `use_amp` is set to True, and 
+            #  device = 'cpu', it would enable autocasting. 
+            ctx = autocast(device_type=device_type, dtype=torch.float16, enabled=use_amp)
+            with ctx:
+                logits = model(x)
             probs = logits.softmax(dim=1)[:, 1]
             all_probs += probs.cpu().numpy().tolist()
             all_y += y.cpu().numpy().tolist()
@@ -191,7 +198,12 @@ def train(trainset, validset, testset, run_tag, hp):
                                  collate_fn=padder)
 
     # initialize model, optimizer, and LR scheduler
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    # if getattr(hp, 'use_gpu', False):
+    if hp.use_gpu:
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    else:
+        device = 'cpu'
+        
     model = DittoModel(device=device,
                        lm=hp.lm,
                        alpha_aug=hp.alpha_aug)
@@ -201,9 +213,8 @@ def train(trainset, validset, testset, run_tag, hp):
 
     scaler = None 
 
-    if hp.amp:
-        if torch.cuda.is_available():
-            scaler = GradScaler() 
+    if hp.amp and device == 'cuda':
+        scaler = GradScaler() 
         
 
     num_steps = (len(trainset) // hp.batch_size) * hp.n_epochs
@@ -222,11 +233,14 @@ def train(trainset, validset, testset, run_tag, hp):
 
         # eval
         model.eval()
-        dev_f1, th = evaluate(model, valid_iter)
-        test_f1 = evaluate(model, test_iter, threshold=th)
+        use_amp = hp.amp and device == 'cuda'
+        dev_f1, th = evaluate(model, valid_iter, use_amp=use_amp)
+        test_f1 = evaluate(model, test_iter, threshold=th, use_amp=use_amp)
 
         if dev_f1 > best_dev_f1:
             best_dev_f1 = dev_f1
+            # TODO: Does having the best dev f1 result in also having best test f1? 
+            #  Need to revisit the logic here.  
             best_test_f1 = test_f1
             if hp.save_model:
                 # create the directory if not exist
@@ -235,7 +249,7 @@ def train(trainset, validset, testset, run_tag, hp):
                     os.makedirs(directory)
 
                 # save the checkpoints for each component
-                ckpt_path = os.path.join(hp.logdir, hp.task, 'model.pt')
+                ckpt_path = os.path.join(hp.logdir, hp.task, f'model.pt')
                 ckpt = {'model': model.state_dict(),
                         'optimizer': optimizer.state_dict(),
                         'scheduler': scheduler.state_dict(),
