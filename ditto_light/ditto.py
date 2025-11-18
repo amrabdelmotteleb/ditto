@@ -87,9 +87,6 @@ def evaluate(model, iterator, threshold=None, use_amp=False):
     with torch.no_grad():
         for batch in iterator:
             x, y = batch
-            # TODO: Look a bit more into using amp with a cpu. 
-            #  Currently, if `use_amp` is set to True, and 
-            #  device = 'cpu', it would enable autocasting. 
             ctx = autocast(device_type=device_type, dtype=torch.float16, enabled=use_amp)
             with ctx:
                 logits = model(x)
@@ -239,8 +236,6 @@ def train(trainset, validset, testset, run_tag, hp):
 
         if dev_f1 > best_dev_f1:
             best_dev_f1 = dev_f1
-            # TODO: Does having the best dev f1 result in also having best test f1? 
-            #  Need to revisit the logic here.  
             best_test_f1 = test_f1
             if hp.save_model:
                 # create the directory if not exist
