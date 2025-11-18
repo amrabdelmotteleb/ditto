@@ -239,12 +239,12 @@ def train(trainset, validset, testset, run_tag, hp):
             best_test_f1 = test_f1
             if hp.save_model:
                 # create the directory if not exist
-                directory = os.path.join(hp.logdir, hp.task)
+                directory = os.path.normpath(os.path.join(hp.logdir, hp.task))
                 if not os.path.exists(directory):
                     os.makedirs(directory)
 
                 # save the checkpoints for each component
-                ckpt_path = os.path.join(hp.logdir, hp.task, f'model.pt')
+                ckpt_path = os.path.normpath(os.path.join(hp.logdir, hp.task, f'model.pt'))
                 ckpt = {'model': model.state_dict(),
                         'optimizer': optimizer.state_dict(),
                         'scheduler': scheduler.state_dict(),

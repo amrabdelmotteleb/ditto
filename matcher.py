@@ -169,6 +169,12 @@ def predict(input_path, output_path, config,
                 'match_confidence': score[int(pred)]}
             writer.write(output)
 
+
+
+    # # # Normalize paths for cross-platform compatibility
+    input_path = os.path.normpath(input_path)
+    output_path = os.path.normpath(output_path)
+    
     # input_path can also be train/valid/test.txt
     # convert to jsonlines
     if '.txt' in input_path:
@@ -241,7 +247,8 @@ def tune_threshold(config, model, hp):
 
     # verify F1
     set_seed(123)
-    predict(validset, "tmp.jsonl", config, model,
+    tmp_path = os.path.normpath("tmp.jsonl")
+    predict(validset, tmp_path, config, model,
             summarizer=summarizer,
             max_len=hp.max_len,
             lm=hp.lm,
@@ -250,10 +257,10 @@ def tune_threshold(config, model, hp):
             use_amp=hp.amp)
 
     predicts = []
-    with jsonlines.open("tmp.jsonl", mode="r") as reader:
+    with jsonlines.open(tmp_path, mode="r") as reader:
         for line in reader:
             predicts.append(int(line['match']))
-    os.system("rm tmp.jsonl")
+    os.remove(tmp_path)
 
     labels = []
     with open(validset, encoding='utf-8') as fin:
@@ -282,7 +289,8 @@ def load_model(task, path, lm, use_gpu):
         MultiTaskNet: the model
     """
     # load models
-    checkpoint = os.path.join(path, task, 'model.pt')
+    checkpoint = os.path.normpath(os.path.join(path, task, 'model.pt'))
+
     if not os.path.exists(checkpoint):
         raise ModelNotFoundError(checkpoint)
 
