@@ -1,11 +1,36 @@
-# NOTE:
+# Ditto Upgrades
 
-In this fork, I will update the Ditto library. Here are some of the things I would like to update: 
-- Work with a newer Python version (3.11+)
-- Newer PyTorch versions allow for mixed precision training, so I would like to explore if I can use that instead of Apex
-- Allow for using some of the newer pre-trained language models that are available out there, like Microsoft's `deberta-v3-base`
+## Background
 
-I will probably update this README.MD in the future when the codebase matures enough! 
+When I tried experimenting with the original version of the Ditto repo, I hit a couple of blockers, including: 
+- Requiring Microsoft Visual Studio 2019 tools in order to build Apex, which is currently unavailable to download for free. Because of that, I could not activate automatic mixed precision for training 
+- Limitations in the selection of pre-trained language models that I can fine-tune. For example, I could not load some of the newer pre-trained language models, like `microsoft/deberta-v3-small`
+- Newer PyTorch versions natively have optimizers, including `AdamW` which is what is being used here, as well as an automatic mixed precision feature
+
+## Main Changes
+
+### Cross-Platform Compatibility Improvements
+- Encode loaded data using UTF-8
+- Normalize path separators for cross-platform compatibility (Windows/Linux/macOS)
+
+### Modernized Dependencies to Use Native PyTorch Features
+- Import `AdamW` from `torch.optim` instead of `transformers` 
+- Import `amp` (automatic mixed precision) from `torch.amp` instead of `apex`, and use gradient scaling by default for training if `amp` is activated
+
+### Enhanced Mixed Precision Support
+- Add option to use amp in model evaluation for faster inference on modern GPUs
+- Update the training process so that amp is activated in evaluation step when activated in the training step
+
+### Command-Line Interface Improvements
+- Change command-line argument name from `fp16` to `amp` for clarity
+- Add an explicit command-line argument for whether to use a GPU in training
+
+### Environment and Dependencies
+- Upgraded to Python 3.12.11
+- Created `updated_requirements.txt` with newer library versions to support modern PyTorch features
+  
+### Project Maintenance
+- Add a .gitignore file
 
 # Ditto: Deep Entity Matching with Pre-Trained Language Models
 
